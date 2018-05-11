@@ -9,7 +9,6 @@ This software is no longer maintened by this author.
 Installation
 -----
 <h4>Ubuntu, Debian, Linux</h4>
-To install GCM from this repository :
 
 ```sh
   wget https://github.com/oOthkOo/gnome-connection-manager/raw/master/gnome-connection-manager.deb
