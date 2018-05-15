@@ -4,7 +4,7 @@ Gnome Connection Manager
 Why ?
 -----
 
-This software is no longer maintened by this author.
+This software is no longer maintained by this author.
 
 Installation
 -----
