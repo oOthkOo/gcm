@@ -1,16 +1,13 @@
-# gnome-connection-manager
-Gnome Connection Manager
+# Gnome Connection Manager
 
-Why ?
+Screenshots
 -----
 
-This software is no longer maintained by his author.
+Horizontal terminal split
+![Screenshot](https://raw.github.com/oOthkOo/raw/master/screenshots/gcm-001.png)
 
-Installation
------
-<h4>Ubuntu, Debian, Linux</h4>
+Horizontal terminal split (Interactive mode)
+![Screenshot](https://raw.github.com/oOthkOo/raw/master/screenshots/gcm-002.png)
 
-```sh
-  wget https://github.com/oOthkOo/gnome-connection-manager/raw/master/gnome-connection-manager.deb
-  dpkg -i gnome-connection-manager.deb
-```
+Horizontal and vertical terminal split
+![Screenshot](https://raw.github.com/oOthkOo/raw/master/screenshots/gcm-003.png)
