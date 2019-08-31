@@ -24,8 +24,8 @@ import sys
 import re
 
 import tokenize
-import gtk
-import gtk.glade
+from gi.repository import Gtk
+import Gtk.glade
 import weakref
 import inspect
 
@@ -50,14 +50,14 @@ def bindtextdomain(app_name, locale_dir=None):
         import locale
         import gettext
         locale.setlocale(locale.LC_ALL, "")
-        gtk.glade.bindtextdomain(app_name, locale_dir)
+        Gtk.glade.bindtextdomain(app_name, locale_dir)
         gettext.install(app_name, locale_dir, unicode=1)
     except (IOError,locale.Error), e:
         #force english as default locale
         try:
             os.environ["LANGUAGE"] = "en_US.UTF-8"
             locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
-            gtk.glade.bindtextdomain(app_name, locale_dir)
+            Gtk.glade.bindtextdomain(app_name, locale_dir)
             gettext.install(app_name, locale_dir, unicode=1)
             return
         except:
@@ -121,7 +121,7 @@ class SimpleGladeApp:
     def __repr__(self):
         class_name = self.__class__.__name__
         if self.main_widget:
-            root = gtk.Widget.get_name(self.main_widget)
+            root = Gtk.Widget.get_name(self.main_widget)
             repr = '%s(path="%s", root="%s")' % (class_name, self.glade_path, root)
         else:
             repr = '%s(path="%s")' % (class_name, self.glade_path)
@@ -160,18 +160,18 @@ class SimpleGladeApp:
         prefixes a widget has for each widget.
         """
         for widget in self.get_widgets():
-            widget_name = gtk.Widget.get_name(widget)
+            widget_name = Gtk.Widget.get_name(widget)
             prefixes_name_l = widget_name.split(":")
             prefixes = prefixes_name_l[ : -1]
             widget_api_name = prefixes_name_l[-1]
             widget_api_name = "_".join( re.findall(tokenize.Name, widget_api_name) )
-            gtk.Widget.set_name(widget, widget_api_name)
+            Gtk.Widget.set_name(widget, widget_api_name)
             if hasattr(self, widget_api_name):
                 raise AttributeError("instance %s already has an attribute %s" % (self,widget_api_name))
             else:
                 setattr(self, widget_api_name, widget)
                 if prefixes:
-                    gtk.Widget.set_data(widget, "prefixes", prefixes)
+                    Gtk.Widget.set_data(widget, "prefixes", prefixes)
 
     def add_prefix_actions(self, prefix_actions_proxy):
         """
@@ -201,7 +201,7 @@ class SimpleGladeApp:
         prefix_actions_d = dict( map(drop_prefix, prefix_actions_t) )
 
         for widget in self.get_widgets():
-            prefixes = gtk.Widget.get_data(widget, "prefixes")
+            prefixes = Gtk.Widget.get_data(widget, "prefixes")
             if prefixes:
                 for prefix in prefixes:
                     if prefix in prefix_actions_d:
@@ -296,27 +296,27 @@ class SimpleGladeApp:
     def main(self):
         """
         Starts the main loop of processing events.
-        The default implementation calls gtk.main()
+        The default implementation calls Gtk.main()
 
         Useful for applications that needs a non gtk main loop.
         For example, applications based on gstreamer needs to override
-        this method with gst.main()
+        this method with Gst.main()
 
         Do not directly call this method in your programs.
         Use the method run() instead.
         """
-        gtk.main()
+        Gtk.main()
 
     def quit(self):
         """
         Quit processing events.
-        The default implementation calls gtk.main_quit()
+        The default implementation calls Gtk.main_quit()
         
         Useful for applications that needs a non gtk main loop.
         For example, applications based on gstreamer needs to override
-        this method with gst.main_quit()
+        this method with Gst.main_quit()
         """
-        gtk.main_quit()
+        Gtk.main_quit()
 
     def run(self):
         """
@@ -340,10 +340,10 @@ class SimpleGladeApp:
         pass
 
     def install_custom_handler(self, custom_handler):
-        gtk.glade.set_custom_handler(custom_handler)
+        Gtk.glade.set_custom_handler(custom_handler)
 
     def create_glade(self, glade_path, root, domain):
-        return gtk.glade.XML(self.glade_path, root, domain)
+        return Gtk.glade.XML(self.glade_path, root, domain)
 
     def get_widget(self, widget_name):
         return self.glade.get_widget(widget_name)
