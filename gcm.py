@@ -163,17 +163,21 @@ import sys
 import base64
 import time
 import tempfile
+import gi
 
 try:
     gi.require_version("Gtk", "3.0")
     from gi.repository import Gtk
+    gi.require_version('Gdk', '3.0')
+    from gi.repository import Gdk
     from gi.repository import GObject
 except:
     print >> sys.stderr, "pygtk required"
     sys.exit(1)
 
 try:
-    import vte
+    gi.require_version("Vte", "2.91")
+    from gi.repository import Vte
 except:
     error = Gtk.MessageDialog (None, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
       'You must install libvte for python')
@@ -1036,7 +1040,7 @@ class Wmain(SimpleGladeApp):
 
     def addTab(self, notebook, host):
         try:
-            v = vte.Terminal()
+            v = Vte.Terminal()
             v.set_word_chars(conf.WORD_SEPARATORS)
             v.set_scrollback_lines(conf.BUFFER_LINES)
             if v.get_emulation() != os.getenv("TERM"):
@@ -1499,7 +1503,7 @@ class Wmain(SimpleGladeApp):
         os.rename(CONFIG_FILE + ".tmp", CONFIG_FILE)
 
     def on_tab_focus(self, widget, *args):
-        if isinstance(widget, vte.Terminal):
+        if isinstance(widget, Vte.Terminal):
             self.current = widget
 
     def split_notebook(self, direction):
@@ -1558,7 +1562,7 @@ class Wmain(SimpleGladeApp):
             return None
 
     def find_active_terminal(self, widget):
-        if isinstance(widget, vte.Terminal) and widget.is_focus():
+        if isinstance(widget, Vte.Terminal) and widget.is_focus():
             return widget
         else:
             if not hasattr(widget, "get_children"):
@@ -1566,7 +1570,7 @@ class Wmain(SimpleGladeApp):
 
             for w in widget.get_children():
                 wid = self.find_active_terminal(w)
-                if isinstance(wid, vte.Terminal) and wid.is_focus():
+                if isinstance(wid, Vte.Terminal) and wid.is_focus():
                     return wid
             return None
 
@@ -2047,8 +2051,8 @@ class Host():
             self.compressionLevel = self.get_arg(args,'')
             self.extra_params = self.get_arg(args, '')
             self.log = self.get_arg(args, False)
-            self.backspace_key = self.get_arg(args, int(vte.ERASE_AUTO))
-            self.delete_key = self.get_arg(args, int(vte.ERASE_AUTO))
+            self.backspace_key = self.get_arg(args, int(Vte.ERASE_AUTO))
+            self.delete_key = self.get_arg(args, int(Vte.ERASE_AUTO))
         except:
             pass
 
@@ -2099,8 +2103,8 @@ class HostUtils:
         compressionLevel = HostUtils.get_val(cp, section, "compression-level", "")
         extra_params = HostUtils.get_val(cp, section, "extra_params", "")
         log = HostUtils.get_val(cp, section, "log", False)
-        backspace_key = int(HostUtils.get_val(cp, section, "backspace-key", int(vte.ERASE_AUTO)))
-        delete_key = int(HostUtils.get_val(cp, section, "delete-key", int(vte.ERASE_AUTO)))
+        backspace_key = int(HostUtils.get_val(cp, section, "backspace-key", int(Vte.ERASE_AUTO)))
+        delete_key = int(HostUtils.get_val(cp, section, "delete-key", int(Vte.ERASE_AUTO)))
         h = Host(group, name, description, host, user, password, private_key, port, tunnel, ctype, commands, keepalive, fcolor, bcolor, x11, agent, compression, compressionLevel,  extra_params, log, backspace_key, delete_key)
         return h
 
