@@ -1,37 +1,31 @@
+# -*- coding: utf-8; -*-
 """
- SimpleGladeApp.py
- Module that provides an object oriented abstraction to pygtk and libglade.
- Copyright (C) 2004 Sandino Flores Moreno
+Copyright (C) 2007-2013 Guake authors
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA 02110-1301 USA
 """
-
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2.1 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-
 import os
-import sys
 import re
+import sys
+
 import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
 import tokenize
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-import weakref
-import inspect
-
-__version__ = "1.0"
-__author__ = 'Sandino "tigrux" Flores-Moreno'
 
 def bindtextdomain(app_name, locale_dir=None):
     """
@@ -67,7 +61,7 @@ def bindtextdomain(app_name, locale_dir=None):
             except:
                 __builtins__["_"] = lambda x : x
 
-class SimpleGladeApp:
+class SimpleGladeApp():
 
     def __init__(self, path, root=None, domain=None, **kwargs):
         """
@@ -100,22 +94,26 @@ class SimpleGladeApp:
         if os.path.isfile(path):
             self.glade_path = path
         else:
-            glade_dir = os.path.dirname( sys.argv[0] )
+            glade_dir = os.path.dirname(sys.argv[0])
             self.glade_path = os.path.join(glade_dir, path)
         for key, value in kwargs.items():
             try:
-                setattr(self, key, weakref.proxy(value) )
+                setattr(self, key, weakref.proxy(value))
             except TypeError:
                 setattr(self, key, value)
+
         self.glade = None
-        self.install_custom_handler(self.custom_handler)
-        self.glade = self.create_glade(self.glade_path, root, domain)
+
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file(self.glade_path)
+
         if root:
-            self.main_widget = self.get_widget(root)
+            self.main_widget = self.builder.get_object(root)
+            self.main_widget.show_all()
         else:
             self.main_widget = None
+
         self.normalize_names()
-        self.add_callbacks(self)
         self.new()
 
     def __repr__(self):
@@ -148,7 +146,7 @@ class SimpleGladeApp:
             an instance with methods as code of callbacks.
             It means it has methods like on_button1_clicked, on_entry1_activate, etc.
         """
-        self.glade.signal_autoconnect(callbacks_proxy)
+        self.builder.connect_signals(callbacks_proxy)
 
     def normalize_names(self):
         """
@@ -160,18 +158,22 @@ class SimpleGladeApp:
         prefixes a widget has for each widget.
         """
         for widget in self.get_widgets():
-            widget_name = Gtk.Widget.get_name(widget)
-            prefixes_name_l = widget_name.split(":")
-            prefixes = prefixes_name_l[ : -1]
-            widget_api_name = prefixes_name_l[-1]
-            widget_api_name = "_".join( re.findall(tokenize.Name, widget_api_name) )
-            Gtk.Widget.set_name(widget, widget_api_name)
-            if hasattr(self, widget_api_name):
-                raise AttributeError("instance %s already has an attribute %s" % (self,widget_api_name))
-            else:
-                setattr(self, widget_api_name, widget)
-                if prefixes:
-                    Gtk.Widget.set_data(widget, "prefixes", prefixes)
+            if isinstance(widget, Gtk.Buildable):
+                widget_name = Gtk.Buildable.get_name(widget)
+                prefixes_name_l = widget_name.split(":")
+                prefixes = prefixes_name_l[:-1]
+                widget_api_name = prefixes_name_l[-1]
+                widget_api_name = "_".join(re.findall(tokenize.Name, widget_api_name))
+                widget_name = Gtk.Buildable.set_name(widget, widget_api_name)
+                if hasattr(self, widget_api_name):
+                    raise AttributeError(
+                        "instance %s already has an attribute %s" % (self, widget_api_name)
+                    )
+                else:
+                    setattr(self, widget_api_name, widget)
+                    if prefixes:
+                        # TODO is is a guess
+                        Gtk.Buildable.set_data(widget, "prefixes", prefixes)
 
     def add_prefix_actions(self, prefix_actions_proxy):
         """
@@ -191,14 +193,19 @@ class SimpleGladeApp:
         prefix_s = "prefix_"
         prefix_pos = len(prefix_s)
 
-        is_method = lambda t : callable( t[1] )
-        is_prefix_action = lambda t : t[0].startswith(prefix_s)
-        drop_prefix = lambda (k,w): (k[prefix_pos:],w)
+        def is_method(t):
+            return callable(t[1])
+
+        def is_prefix_action(t):
+            return t[0].startswith(prefix_s)
+
+        def drop_prefix(k, w):
+            return (k[prefix_pos:], w)
 
         members_t = inspect.getmembers(prefix_actions_proxy)
         methods_t = filter(is_method, members_t)
         prefix_actions_t = filter(is_prefix_action, methods_t)
-        prefix_actions_d = dict( map(drop_prefix, prefix_actions_t) )
+        prefix_actions_d = dict(map(drop_prefix, prefix_actions_t))
 
         for widget in self.get_widgets():
             prefixes = Gtk.Widget.get_data(widget, "prefixes")
@@ -208,9 +215,7 @@ class SimpleGladeApp:
                         prefix_action = prefix_actions_d[prefix]
                         prefix_action(widget)
 
-    def custom_handler(self,
-            glade, function_name, widget_name,
-            str1, str2, int1, int2):
+    def custom_handler(self, glade, function_name, widget_name, str1, str2, int1, int2):
         """
         Generic handler for creating custom widgets, internally used to
         enable custom widgets (custom widgets of glade).
@@ -246,6 +251,7 @@ class SimpleGladeApp:
         Equivalent to widget.hide()
         """
         widget.hide()
+        return True
 
     def gtk_widget_grab_focus(self, widget, *args):
         """
@@ -263,7 +269,7 @@ class SimpleGladeApp:
         """
         widget.destroy()
 
-    def gtk_window_activate_default(self, window, *args):
+    def gtk_window_activate_default(self, widget, *args):
         """
         Predefined callback.
         The default widget of the window is activated.
@@ -300,21 +306,21 @@ class SimpleGladeApp:
 
         Useful for applications that needs a non gtk main loop.
         For example, applications based on gstreamer needs to override
-        this method with Gst.main()
+        this method with gst.main()
 
         Do not directly call this method in your programs.
         Use the method run() instead.
         """
         Gtk.main()
 
-    def quit(self):
+    def quit(self, *args):
         """
         Quit processing events.
         The default implementation calls Gtk.main_quit()
 
         Useful for applications that needs a non gtk main loop.
         For example, applications based on gstreamer needs to override
-        this method with Gst.main_quit()
+        this method with gst.main_quit()
         """
         Gtk.main_quit()
 
@@ -339,14 +345,8 @@ class SimpleGladeApp:
         """
         pass
 
-    def install_custom_handler(self, custom_handler):
-        Gtk.glade.set_custom_handler(custom_handler)
-
-    def create_glade(self, glade_path, root, domain):
-        return Gtk.glade.XML(self.glade_path, root, domain)
-
     def get_widget(self, widget_name):
-        return self.glade.get_widget(widget_name)
+        return self.builder.get_object(widget_name)
 
     def get_widgets(self):
-        return self.glade.get_widget_prefix("")
+        return self.builder.get_objects()
