@@ -114,6 +114,7 @@ class SimpleGladeApp():
             self.main_widget = None
 
         self.normalize_names()
+        self.add_callbacks(self)
         self.new()
 
     def __repr__(self):

@@ -1201,7 +1201,7 @@ class Wmain(SimpleGladeApp):
                     if host.extra_params != None and host.extra_params != '':
                         args += host.extra_params.split()
                     args += [host.host, host.port]
-                v.command = (cmd, args, password)
+                v.command = [cmd, args, password]
 
                 v.spawn_sync(
                     Vte.PtyFlags.DEFAULT,
@@ -1574,7 +1574,7 @@ class Wmain(SimpleGladeApp):
             #El nuevo hpaned dejarlo como hijo del actual parent
             hp = Gtk.HPaned() if direction==HSPLIT else Gtk.VPaned()
             nb = Gtk.Notebook()
-            nb.set_group_id(11)
+            nb.set_group_name("11")
             nb.connect('button_press_event', self.on_double_click, None)
             nb.connect('page_removed', self.on_page_removed)
             nb.connect("page-added", self.on_page_added)
@@ -1829,7 +1829,7 @@ class Wmain(SimpleGladeApp):
 
     #-- Wmain.on_double_click {
     def on_double_click(self, widget, event, *args):
-        if event.type in [Gdk._2BUTTON_PRESS, Gdk._3BUTTON_PRESS] and event.button == 1:
+        if event.type in [Gdk.EventType._2BUTTON_PRESS, Gdk.EventType._3BUTTON_PRESS] and event.button == 1:
             if isinstance(widget, Gtk.Notebook):
                 pos = event.x + widget.get_allocation().x
                 size = widget.get_tab_label(widget.get_nth_page(widget.get_n_pages()-1)).get_allocation()
@@ -2044,7 +2044,7 @@ class Wmain(SimpleGladeApp):
 
     #-- Wmain.on_hpMain_button_press_event {
     def on_hpMain_button_press_event(self, widget, event, *args):
-        if event.type in [Gdk._2BUTTON_PRESS]:
+        if event.type in [Gdk.EventType._2BUTTON_PRESS]:
             p = self.hpMain.get_position()
             self.set_panel_visible(p==0)
     #-- Wmain.on_hpMain_button_press_event }
@@ -3007,7 +3007,7 @@ class NotebookTabLabel(Gtk.HBox):
             image_h = pixbuf.get_width()
             image_w = pixbuf.get_height()
             close_btn.set_size_request(image_w+7, image_h+6)
-        #self.widget = widget_
+        self.tab = widget_
         self.popup = popup_
         style = close_btn.get_style();
         self.eb2 = Gtk.EventBox()
@@ -3038,23 +3038,23 @@ class NotebookTabLabel(Gtk.HBox):
         self.close_tab(widget)
 
     def close_tab(self, widget):
-        notebook = self.widget.get_parent()
-        page=notebook.page_num(self.widget)
+        notebook = self.tab.get_parent()
+        page=notebook.page_num(self.tab)
         if page >= 0:
             notebook.is_closed = True
             notebook.remove_page(page)
             notebook.is_closed = False
-            self.widget.destroy()
+            self.tab.destroy()
 
     def mark_tab_as_closed(self):
         self.label.set_markup("<span color='darkgray' strikethrough='true'>%s</span>" % (self.label.get_text()))
         self.is_active = False
         if conf.AUTO_CLOSE_TAB != 0:
             if conf.AUTO_CLOSE_TAB == 2:
-                terminal = self.widget.get_parent().get_nth_page(self.widget.get_parent().page_num(self.widget)).get_child()
+                terminal = self.tab.get_parent().get_nth_page(self.tab.get_parent().page_num(self.tab)).get_child()
                 if terminal.get_child_exit_status() != 0:
                     return
-            self.close_tab(self.widget)
+            self.close_tab(self.tab)
 
     def mark_tab_as_active(self):
         self.label.set_markup("%s" % (self.label.get_text()))
@@ -3072,11 +3072,11 @@ class NotebookTabLabel(Gtk.HBox):
                 self.popup.mnuReopen.show()
 
             #enable or disable log checkbox according to terminal
-            self.popup.mnuLog.set_active( hasattr(self.widget.get_child(), "log_handler_id") and self.widget.get_child().log_handler_id != 0 )
+            self.popup.mnuLog.set_active( hasattr(self.tab.get_child(), "log_handler_id") and self.tab.get_child().log_handler_id != 0 )
             self.popup.popup( None, None, None, event.button, event.time)
             return True
         elif event.type == Gdk.EventType.BUTTON_PRESS and event.button == 2:
-            self.close_tab(self.widget)
+            self.close_tab(self.tab)
 
 class EntryDialog( Gtk.Dialog):
     def __init__(self, title, message, default_text='', modal=True, mask=False):
