@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python3
 # Copyright (c) 2007 Brandon Sterne
 # Licensed under the MIT license.
 # http://brandon.sternefamily.net/files/mit-license.txt
@@ -7,7 +7,7 @@
 import sys, hashlib, string, getpass
 from copy import copy
 from random import randint
-import StringIO, base64
+import io, base64
 
 # The actual Rijndael specification includes variable block size, but
 # AES uses a fixed block size of 16 bytes (128 bits)
@@ -141,7 +141,7 @@ def expandKey(cipherKey):
         for i in range(4):
             expandedKey.append(((expandedKey[currentSize - cipherKeySize]) ^ (t[i])))
             currentSize += 1
-            
+
     return expandedKey
 
 # do sbox transform on each of the values in the state table
@@ -299,7 +299,7 @@ def aesMainInv(state, expandedKey, numRounds=14):
     # last round - leave out the mixColumns transformation
     roundKey = createRoundKey(expandedKey, 0)
     addRoundKey(state, roundKey)
-    
+
 # aesEncrypt - encrypt a single block of plaintext
 def aesEncrypt(plaintext, key):
     block = copy(plaintext)
@@ -350,15 +350,15 @@ def encrypt(text, password):
     # convert password to AES 256-bit key
     aesKey = passwordToKey(password)
 
-    fp = StringIO.StringIO(text)
-    outfile = StringIO.StringIO()
+    fp = io.StringIO.StringIO(text)
+    outfile = io.StringIO.StringIO()
 
     # write IV to outfile
     for byte in IV:
         outfile.write(chr(byte))
 
-    # get the file size (bytes) 
-    # if the file size is a multiple of the block size, we'll need 
+    # get the file size (bytes)
+    # if the file size is a multiple of the block size, we'll need
     # to add a block of padding at the end of the message
     fp.seek(0,2)
     filesize = fp.tell()
@@ -400,8 +400,8 @@ def decrypt(text, password):
     # convert password to AES 256-bit key
     aesKey = passwordToKey(password)
 
-    fp = StringIO.StringIO(base64.b64decode(text))
-    outfile = StringIO.StringIO()
+    fp = io.StringIO.StringIO(base64.b64decode(text))
+    outfile = io.StringIO.StringIO()
 
     # recover Initialization Vector, the first block in file
     IV = getBlock(fp)
@@ -442,4 +442,3 @@ def decrypt(text, password):
     s = outfile.getvalue()
     outfile.close()
     return s
-

@@ -45,14 +45,14 @@ def bindtextdomain(app_name, locale_dir=None):
         import gettext
         locale.setlocale(locale.LC_ALL, "")
         locale.bindtextdomain(app_name, locale_dir)
-        gettext.install(app_name, locale_dir, unicode=1)
-    except (IOError,locale.Error), e:
+        gettext.install(app_name, locale_dir)
+    except (IOError,locale.Error):
         #force english as default locale
         try:
             os.environ["LANGUAGE"] = "en_US.UTF-8"
             locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
             locale.bindtextdomain(app_name, locale_dir)
-            gettext.install(app_name, locale_dir, unicode=1)
+            gettext.install(app_name, locale_dir)
             return
         except:
             #english didnt work, just use spanish
